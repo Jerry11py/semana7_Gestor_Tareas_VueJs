@@ -12,18 +12,16 @@
       <button @click="addTask" class="btn btn-primary">Añadir</button>
     </div>
     
-    <!-- Mostrar todas las tareas añadidas por el usuario -->
-    <div v-if="tasks.length > 0" class="list-group mt-3">
-      <div v-for="task in tasks" :key="task.id" class="list-group-item d-flex justify-content-between align-items-start">
-        <span :class="{ 'text-decoration-line-through': task.completed, 'text-muted': task.completed }" class="flex-grow-1">
-          {{ task.todo }}
+    <!-- Mostrar solo la tarea añadida -->
+    <div v-if="addedTask" class="list-group mt-3">
+      <div class="list-group-item d-flex justify-content-between align-items-start">
+        <span :class="{ 'text-decoration-line-through': addedTask.completed, 'text-muted': addedTask.completed }" class="flex-grow-1">
+          {{ addedTask.todo }}
         </span>
-        <div class="btn-group align-self-center">
-          <button @click="toggleTaskCompletion(task)" class="btn btn-sm btn-outline-success me-2">
-            {{ task.completed ? 'Desmarcar' : 'Completar' }}
-          </button>
-          <button @click="deleteTask(task)" class="btn btn-sm btn-outline-danger">Eliminar</button>
-        </div>
+        <button @click="toggleTaskCompletion(addedTask)" class="btn btn-sm btn-outline-success me-2">
+          {{ addedTask.completed ? 'Desmarcar' : 'Completar' }}
+        </button>
+        <button @click="deleteTask" class="btn btn-sm btn-outline-danger">Eliminar</button>
       </div>
     </div>
   </div>
@@ -36,8 +34,8 @@ export default {
   name: "AddTask",
   data() {
     return {
-      newTask: "",   // Campo de entrada para la nueva tarea
-      tasks: [],     // Lista de tareas añadidas por el usuario
+      newTask: "",     // Campo de entrada para la nueva tarea
+      addedTask: null, // Tarea recientemente añadida
     };
   },
   methods: {
@@ -45,14 +43,12 @@ export default {
       if (this.newTask.trim() === "") return;
 
       try {
-        // Añadir la tarea al API
         const response = await axios.post('https://dummyjson.com/todos/add', {
           todo: this.newTask,
           completed: false,
           userId: 1,
         });
-        // Agregar la tarea al arreglo `tasks` para mostrarla en la lista
-        this.tasks.unshift(response.data);
+        this.addedTask = response.data; // Guardar la tarea añadida para mostrarla
         this.$emit('task-added', response.data); // Emitir el evento
         this.newTask = ""; // Limpiar el campo de entrada
       } catch (error) {
@@ -62,9 +58,8 @@ export default {
     toggleTaskCompletion(task) {
       task.completed = !task.completed;
     },
-    deleteTask(task) {
-      // Remover la tarea del arreglo `tasks`
-      this.tasks = this.tasks.filter(t => t.id !== task.id);
+    deleteTask() {
+      this.addedTask = null; // Eliminar la tarea recientemente añadida
     },
   },
 };
