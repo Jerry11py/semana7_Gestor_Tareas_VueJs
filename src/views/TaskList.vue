@@ -1,18 +1,28 @@
 <template>
-    <div>
-        <h1>Lista de Tareas</h1>
-        <button @click="fetchTasks">Cargar Tareas</button>
-        <div v-if="tasks.length > 0">
-            <div v-for="task in tasks" :key="task.id">
-                <div>
-                    <h5 :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">{{ task.todo }}</h5>
-                    <span>{{ task.completed ? 'Completada' : 'Pendiente' }}</span>
-                    <button @click="toggleTaskCompletion(task)">
-                        {{ task.completed ? 'Desmarcar' : 'Completar' }}
-                    </button>
-                    <button @click="deleteTask(task)">Eliminar</button>
-                </div>
+    <div class="container my-5">
+        <h2 class="text-center mb-4">Lista de Tareas</h2>
+
+        <!-- Mostrar un spinner mientras se cargan las tareas -->
+        <div v-if="loading" class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
             </div>
+        </div>
+
+        <!-- Lista de tareas -->
+        <div v-if="!loading && tasks.length > 0" class="list-group">
+            <div v-for="task in tasks" :key="task.id" class="list-group-item d-flex justify-content-between align-items-center">
+                <span :class="{ 'text-decoration-line-through': task.completed }">{{ task.todo }}</span>
+                <button @click="$emit('toggle-completion', task.id)" 
+                        :class="['btn', task.completed ? 'btn-success' : 'btn-outline-success']">
+                    {{ task.completed ? 'Completado' : 'Pendiente' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Mensaje cuando no hay tareas -->
+        <div v-if="!loading && tasks.length === 0" class="alert alert-info text-center">
+            No hay tareas disponibles.
         </div>
     </div>
 </template>
@@ -20,33 +30,19 @@
 <script>
 export default {
     name: "TaskList",
+    props: {
+        tasks: Array, // Lista de tareas recibida desde el componente padre
+    },
     data() {
         return {
-            tasks: [], // Almacenamiento local de las tareas traídas de la API
+            loading: false, // Indicador de carga, se puede manejar en el padre si es necesario
         };
-    },
-    methods: {
-        // Llamada para obtener las tareas desde la API externa
-        fetchTasks() {
-            // Aquí deberían realizar la solicitud a la API usando axios o fetch.
-            // La URL que usaremos es: https://dummyjson.com/todos
-
-            // Sugerencia: Intentar implementarlo con axios o fetch
-        },
-
-        // Cambiar el estado de una tarea (completada/no completada)
-        toggleTaskCompletion(task) {
-            task.completed = !task.completed;
-        },
-
-        // Eliminar la tarea seleccionada
-        deleteTask(task) {
-            this.tasks = this.tasks.filter((t) => t.id !== task.id);
-        },
     },
 };
 </script>
 
 <style scoped>
-/* Aquí pueden experimentar con estilos de tu preferencia */
+.text-decoration-line-through {
+    text-decoration: line-through;
+}
 </style>

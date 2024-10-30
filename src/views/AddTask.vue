@@ -1,110 +1,107 @@
+<!-- AddTask.vue -->
 <template>
-    <div class="add-task-container">
-        <h1>Añadir Tarea</h1>
-        <div class="input-group">
-            <input 
-                v-model="newTask" 
-                @keyup.enter="addTask" 
-                placeholder="Añadir nueva tarea" 
-                class="task-input"
-            />
-            <button @click="addTask" class="add-button">Añadir</button>
+    <div class="container my-5 add-task-container">
+      <h1 class="text-center mb-4">Añadir Tarea</h1>
+      <div class="input-group mb-3">
+        <input 
+          v-model="newTask" 
+          @keyup.enter="addTask" 
+          placeholder="Añadir nueva tarea" 
+          class="form-control"
+        />
+        <button @click="addTask" class="btn btn-primary">Añadir</button>
+      </div>
+      <!-- Lista de tareas -->
+      <div v-if="!loading && tasks.length > 0" class="list-group">
+        <div v-for="task in tasks" :key="task.id" class="list-group-item d-flex justify-content-between align-items-start">
+          <span :class="{ 'text-decoration-line-through': task.completed, 'text-muted': task.completed }" class="flex-grow-1">
+            {{ task.todo }}
+          </span>
+          <div class="btn-group align-self-center">
+            <button @click="toggleTaskCompletion(task)" class="btn btn-sm btn-outline-success me-2">
+              {{ task.completed ? 'Desmarcar' : 'Completar' }}
+            </button>
+            <button @click="deleteTask(task)" class="btn btn-sm btn-outline-danger">Eliminar</button>
+          </div>
         </div>
-
-        <div v-if="tasks.length > 0" class="task-list">
-            <div v-for="task in tasks" :key="task.id" class="task-item">
-                <span :class="{ completed: task.completed }">{{ task.todo }}</span>
-                <div>
-                    <button @click="toggleTaskCompletion(task)">
-                        {{ task.completed ? 'Desmarcar' : 'Completar' }}
-                    </button>
-                    <button @click="deleteTask(task)">Eliminar</button>
-                </div>
-            </div>
+      </div>
+      <div v-if="loading" class="text-center">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
         </div>
+      </div>
+      <div v-if="!loading && tasks.length === 0" class="alert alert-info text-center">
+        No hay tareas disponibles.
+      </div>
     </div>
-</template>
-
-<script>
-export default {
+  </template>
+  
+  <script>
+  import axios from 'axios';
+  
+  export default {
     name: "AddTask",
     data() {
-        return {
-            newTask: "", // Campo de entrada para la nueva tarea
-            tasks: [],   // Lista de tareas locales
-        };
+      return {
+        newTask: "",    // Campo de entrada para la nueva tarea
+        tasks: [],      // Lista de tareas
+        loading: true,  // Indicador de carga
+      };
     },
     methods: {
-        addTask() {
-            if (this.newTask.trim() === "") return;
-
-            const newTask = {
-                todo: this.newTask,
-                completed: false,
-                id: Date.now(), 
-            };
-
-            // Añadir la nueva tarea al inicio de la lista
-            this.tasks.unshift(newTask);
-            this.newTask = ""; // Limpiar el campo de entrada después de agregar
+      async fetchTasks() {
+        try {
+          const response = await axios.get('https://dummyjson.com/todos?limit=10');
+          this.tasks = response.data.todos;
+        } catch (error) {
+          console.error("Error al cargar las tareas:", error);
+        } finally {
+          this.loading = false;
+        }
+      },
+      async addTask() {
+        if (this.newTask.trim() === "") return;
+  
+        try {
+          const response = await axios.post('https://dummyjson.com/todos/add', {
+            todo: this.newTask,
+            completed: false,
+            userId: 1,
+          });
+          this.tasks.unshift(response.data);
+          this.$emit('task-added', response.data); // Emitir el evento
+          this.newTask = "";
+        } catch (error) {
+          console.error("Error al añadir la tarea:", error);
+        }
+      },
+      toggleTaskCompletion(task) {
+        task.completed = !task.completed;
+      },
+      deleteTask(task) {
+        //this.tasks = this.tasks.filter(t => t.id !== task.id);
+        this.tasks = this.tasks.filter((t) => t.id !== task.id); // Eliminar la tarea de la lista local
         },
-
-        // Elimina una tarea específica de la lista
-        deleteTask(task) {
-            this.tasks = this.tasks.filter((t) => t.id !== task.id);
-        },
-
-        // Cambia el estado de la tarea entre completada y no completada
-        toggleTaskCompletion(task) {
-            task.completed = !task.completed;
-        },
+      
     },
-};
-</script>
-
-<style scoped>
-.add-task-container {
-    padding: 20px;
-    max-width: 400px;
-    margin: 0 auto;
-}
-
-.input-group {
+    created() {
+      this.fetchTasks();
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .add-task-container {
+    max-width: 600px;
+  }
+  
+  .list-group-item {
     display: flex;
-    margin-bottom: 10px;
-}
-
-.task-input {
-    flex-grow: 1;
-    padding: 8px;
-    margin-right: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-.add-button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 4px;
-    background-color: #007bff;
-    color: white;
-    cursor: pointer;
-}
-
-.task-list {
-    margin-top: 20px;
-}
-
-.task-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
-}
-
-.completed {
+    flex-wrap: nowrap;
+  }
+  
+  .text-decoration-line-through {
     text-decoration: line-through;
-    color: gray;
-}
-</style>
+  }
+  </style>
+  
